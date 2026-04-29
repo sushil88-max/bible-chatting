@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bible Chat — Holy Bible Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-dim: #7a6130;
+    --parchment: #f5ead6;
+    --parchment-dark: #e8d5b0;
+    --ink: #1a1208;
+    --ink-soft: #3d2e10;
+    --brown: #4a2e0a;
+    --brown-light: #7a5230;
+    --cream: #fdf6e8;
+    --shadow: rgba(26,18,8,0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Crimson Pro', Georgia, serif;
+    background: var(--ink);
+    color: var(--parchment);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(74,46,10,0.4) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+    background: rgba(26,18,8,0.8);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+  }
+
+  .header-cross {
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 12px;
+    margin-bottom: 4px;
+    animation: glow 3s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% { text-shadow: 0 0 10px rgba(201,168,76,0.4); }
+    50% { text-shadow: 0 0 20px rgba(201,168,76,0.8), 0 0 40px rgba(201,168,76,0.3); }
+  }
+
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.8rem;
+    color: var(--gold-dim);
+    font-style: italic;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* Daily verse banner */
+  .daily-verse {
+    position: relative;
+    z-index: 10;
+    background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.05));
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding: 8px 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .daily-verse span {
+    font-size: 0.78rem;
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .daily-verse strong {
+    color: var(--gold-light);
+    font-style: normal;
+    font-size: 0.72rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+  }
+
+  /* Quick topics */
+  .quick-topics {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+  }
+
+  .quick-topics::-webkit-scrollbar { display: none; }
+
+  .topic-btn {
+    flex-shrink: 0;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .topic-btn:hover {
+    background: rgba(201,168,76,0.2);
+    border-color: var(--gold);
+    color: var(--gold-light);
+    transform: translateY(-1px);
+  }
+
+  /* Chat area */
+  .chat-area {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201,168,76,0.3) transparent;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+
+  /* Messages */
+  .message {
+    display: flex;
+    gap: 10px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .avatar.ai {
+    background: linear-gradient(135deg, rgba(201,168,76,0.2), rgba(74,46,10,0.4));
+  }
+
+  .avatar.user-av {
+    background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(26,18,8,0.4));
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 12px 15px;
+    border-radius: 16px;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    position: relative;
+  }
+
+  .message.ai .bubble {
+    background: linear-gradient(135deg, rgba(201,168,76,0.1), rgba(74,46,10,0.25));
+    border: 1px solid rgba(201,168,76,0.2);
+    border-top-left-radius: 4px;
+    color: var(--parchment);
+  }
+
+  .message.user .bubble {
+    background: linear-gradient(135deg, rgba(201,168,76,0.22), rgba(201,168,76,0.1));
+    border: 1px solid rgba(201,168,76,0.35);
+    border-top-right-radius: 4px;
+    color: var(--cream);
+    text-align: right;
+  }
+
+  .verse-card {
+    margin-top: 10px;
+    padding: 10px 13px;
+    background: rgba(201,168,76,0.08);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: var(--gold-light);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .verse-ref {
+    display: block;
+    margin-top: 5px;
+    font-style: normal;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    color: var(--gold-dim);
+    letter-spacing: 1px;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 10px 14px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+  }
+
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    position: relative;
+    z-index: 10;
+    padding: 12px 16px 16px;
+    background: rgba(26,18,8,0.85);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(201,168,76,0.2);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  textarea {
+    flex: 1;
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: var(--parchment);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    resize: none;
+    min-height: 44px;
+    max-height: 100px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea::placeholder {
+    color: rgba(201,168,76,0.35);
+    font-style: italic;
+  }
+
+  textarea:focus {
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(201,168,76,0.09);
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    border: none;
+    border-radius: 12px;
+    color: var(--ink);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(201,168,76,0.4);
+  }
+
+  .send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .powered {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.3);
+    letter-spacing: 1px;
+    font-family: 'Cinzel', serif;
+  }
+
+  /* Welcome message */
+  .welcome {
+    text-align: center;
+    padding: 20px 10px;
+    color: rgba(201,168,76,0.5);
+  }
+
+  .welcome .cross-large {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 10px;
+    animation: glow 3s ease-in-out infinite;
+  }
+
+  .welcome p {
+    font-style: italic;
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-cross">✝</div>
+  <h1>Bible Chat</h1>
+  <p>Holy Bible Study — Ask, Seek, Knock</p>
+  <button onclick="showKeyModal()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);color:rgba(201,168,76,0.6);padding:4px 10px;border-radius:8px;font-size:0.65rem;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer;">🔑 KEY</button>
+</header>
+
+<div class="daily-verse">
+  <span>"Ask and it shall be given to you; seek and you shall find" — </span>
+  <strong>Matthew 7:7</strong>
+</div>
+
+<div class="quick-topics">
+  <button class="topic-btn" onclick="askTopic('What does the Bible say about faith?')">✨ Faith</button>
+  <button class="topic-btn" onclick="askTopic('Share a verse about love from the Bible')">❤️ Love</button>
+  <button class="topic-btn" onclick="askTopic('What does the Bible teach about prayer?')">🙏 Prayer</button>
+  <button class="topic-btn" onclick="askTopic('Give me a verse about hope and encouragement')">🌟 Hope</button>
+  <button class="topic-btn" onclick="askTopic('What does the Bible say about forgiveness?')">🕊️ Forgiveness</button>
+  <button class="topic-btn" onclick="askTopic('Explain the life of Jesus Christ')">✝️ Jesus</button>
+  <button class="topic-btn" onclick="askTopic('What is the meaning of salvation in the Bible?')">📖 Salvation</button>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="welcome">
+    <span class="cross-large">✝</span>
+    <p>Welcome, dear friend.<br>Ask me anything about the Holy Bible —<br>verses, teachings, stories, or guidance.</p>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="userInput" placeholder="Ask about a Bible verse, topic, or teaching..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+  <div class="powered">✦ POWERED BY CLAUDE AI ✦</div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+// ── API KEY SETUP ──────────────────────────────────────────
+let API_KEY = localStorage.getItem('bible_chat_api_key') || '';
+
+function showKeyModal() {
+  if (document.getElementById('keyModal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'keyModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:999;
+    background:rgba(26,18,8,0.95);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  `;
+  modal.innerHTML = `
+    <div style="
+      background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(74,46,10,0.4));
+      border:1px solid rgba(201,168,76,0.35);
+      border-radius:20px;padding:30px 24px;max-width:340px;width:100%;text-align:center;
+    ">
+      <div style="font-size:2.5rem;margin-bottom:10px;animation:glow 3s ease-in-out infinite">✝</div>
+      <h2 style="font-family:'Cinzel',serif;color:#e8c96a;font-size:1.1rem;letter-spacing:2px;margin-bottom:6px">BIBLE CHAT</h2>
+      <p style="color:rgba(201,168,76,0.6);font-style:italic;font-size:0.82rem;margin-bottom:20px">Enter your Claude API Key to begin</p>
+      <input id="apiKeyInput" type="password"
+        placeholder="sk-ant-api03-..."
+        style="
+          width:100%;padding:11px 14px;border-radius:10px;
+          background:rgba(201,168,76,0.07);
+          border:1px solid rgba(201,168,76,0.3);
+          color:#f5ead6;font-family:'Crimson Pro',serif;font-size:0.9rem;
+          outline:none;margin-bottom:14px;letter-spacing:1px;
+        "
+      />
+      <button onclick="saveKey()" style="
+        width:100%;padding:11px;border-radius:10px;
+        background:linear-gradient(135deg,#c9a84c,#7a6130);
+        border:none;color:#1a1208;
+        font-family:'Cinzel',serif;font-size:0.85rem;
+        letter-spacing:2px;cursor:pointer;font-weight:700;
+        margin-bottom:14px;
+      ">✝ BEGIN STUDY</button>
+      <p style="font-size:0.7rem;color:rgba(201,168,76,0.35);line-height:1.6">
+        Get your free key at<br>
+        <span style="color:rgba(201,168,76,0.6)">console.anthropic.com</span><br>
+        Your key is saved only in your browser.
+      </p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('apiKeyInput')?.focus(), 100);
+}
+
+function saveKey() {
+  const val = document.getElementById('apiKeyInput')?.value.trim();
+  if (!val || !val.startsWith('sk-')) {
+    alert('Please enter a valid API key starting with sk-ant-...');
+    return;
+  }
+  API_KEY = val;
+  localStorage.setItem('bible_chat_api_key', val);
+  document.getElementById('keyModal')?.remove();
+}
+
+// Show modal on load if no key
+if (!API_KEY) showKeyModal();
+// ──────────────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `You are a knowledgeable, warm, and deeply spiritual Bible study assistant called "Bible Chat". Your purpose is to help users explore and understand the Holy Bible.
+
+Guidelines:
+- Always respond with warmth, reverence, and spiritual wisdom
+- When relevant, include actual Bible verses with their references (book, chapter, verse)
+- Format Bible verses clearly, often starting with the verse text then the reference
+- Explain complex biblical concepts in simple, accessible language
+- Be encouraging and uplifting in your responses
+- Draw from both Old and New Testament when appropriate
+- Keep responses concise but meaningful (2-4 paragraphs max)
+- Use phrases like "Scripture tells us...", "The Bible says...", "In God's Word..."
+- End responses with a brief blessing or encouraging note when appropriate
+- Never add personal opinions that contradict Scripture`;
+
+let isLoading = false;
+let conversationHistory = [];
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function askTopic(text) {
+  userInput.value = text;
+  sendMessage();
+}
+
+function addMessage(role, content) {
+  // Remove welcome message if present
+  const welcome = chatArea.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role === 'ai' ? 'ai' : 'user-av'}`;
+  avatar.textContent = role === 'ai' ? '✝' : '🙏';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (role === 'ai') {
+    // Parse for verse formatting — lines starting with quotes get verse-card treatment
+    const parts = content.split('\n\n');
+    let html = '';
+    parts.forEach(part => {
+      if (part.startsWith('"') || part.match(/^[""].*[""][\s\S]*—\s*\w+\s+\d+/)) {
+        html += `<div class="verse-card">${part.replace(/—\s*(\w.*$)/m, '<span class="verse-ref">— $1</span>')}</div>`;
+      } else {
+        html += `<p style="margin-bottom:6px">${part}</p>`;
+      }
+    });
+    bubble.innerHTML = html || content;
+  } else {
+    bubble.textContent = content;
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="avatar ai">✝</div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+  `;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  userInput.value = '';
+  userInput.style.height = 'auto';
+
+  addMessage('user', text);
+  conversationHistory.push({ role: 'user', content: text });
+  showTyping();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: conversationHistory
+      })
+    });
+
+    const data = await response.json();
+    hideTyping();
+
+    const reply = data.content?.map(b => b.text || '').join('\n') || 'I apologize, I could not retrieve a response. Please try again.';
+    conversationHistory.push({ role: 'assistant', content: reply });
+    addMessage('ai', reply);
+
+  } catch (err) {
+    hideTyping();
+    addMessage('ai', 'Peace be with you 🙏 There was a connection issue. Please check your API key or internet and try again.');
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  userInput.focus();
+}
+</script>
+</body>
+</html>
